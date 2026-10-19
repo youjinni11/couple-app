@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <title>우리둘</title>
+  <meta name="theme-color" content="#F7F4FC" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="우리둘" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Hi+Melody&family=Jua&display=swap" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    // apply saved font, text size and language before first paint (no flicker)
+    try {
+      var d = document.documentElement, ls = localStorage;
+      d.dataset.font = ls.getItem('font') || 'gowun';
+      if (ls.getItem('size')) d.style.setProperty('--size', ls.getItem('size'));
+      var lang = ls.getItem('lang');
+      if (lang) d.lang = lang === 'zh' ? 'zh-CN' : lang;
+      if (lang === 'zh') {
+        var l = document.createElement('link');
+        l.id = 'zh-fonts'; l.rel = 'stylesheet';
+        l.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&family=Noto+Serif+SC:wght@400;700&family=ZCOOL+KuaiLe&family=Long+Cang&family=Ma+Shan+Zheng&display=swap';
+        document.head.appendChild(l);
+      }
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <div id="app"><div class="boot">우리둘</div></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
