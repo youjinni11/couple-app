@@ -180,19 +180,16 @@ function Home({ ctx }) {
   const { couple, partner } = ctx;
   const [status, setStatus] = useState(null);
   const [bucket, setBucket] = useState([]);
-  const [annivs, setAnnivs] = useState([]);
   const [push, setPush] = useState('on');
   const today = kstToday();
   const qKey = `daily:${today}`;
   useEffect(() => {
     sb.rpc('answer_status', { p_key: qKey }).then(({ data }) => setStatus(data && data[0]));
     sb.from('bucket_items').select('id,title,emoji,status,preset_id,created_by').order('created_at', { ascending: false }).then(({ data }) => setBucket(data || []));
-    sb.from('anniversaries').select('*').then(({ data }) => setAnnivs(data || []));
     currentPushState().then(setPush);
   }, []);
   const done = bucket.filter((b) => b.status === 'done').length;
   const todo = bucket.filter((b) => b.status === 'todo').slice(0, 3);
-  const events = upcomingEvents(couple.started_on, annivs, 3);
   const ios = /iPhone|iPad/.test(navigator.userAgent);
   return html`<main class="page home">
     <header class="home-top">
@@ -235,11 +232,6 @@ function Home({ ctx }) {
         ? html`<ul class="mini-list">${todo.map((b) => html`<li><button onClick=${() => go('#/bucket/' + b.id)}><span>${b.emoji}</span>${bucketTitle(b)}</button></li>`)}</ul>`
         : html`<button class="btn small" onClick=${() => go('#/bucket-pick')}>${t('bucket.pickFromIdeas')}</button>`}
     </section>
-
-    ${events.length > 0 && html`<section class="card">
-      <div class="row-between"><h2>${t('home.upcoming')}</h2><button class="link" onClick=${() => go('#/calendar')}>${t('cal.title')}</button></div>
-      <${EventList} events=${events} />
-    </section>`}
 
     <button class="card link-card" onClick=${() => go('#/memories')}>${t('home.openMemories')}</button>
   </main>`;
@@ -729,7 +721,7 @@ function Calendar({ ctx }) {
       ${!selEvents.length && !selBuckets.length && !selDiaries.length && html`<p class="muted small">${t('cal.empty')}</p>`}
     </section>
     <section class="card">
-      <div class="row-between"><h2>${t('anniv.title')}</h2><button class="link" onClick=${() => setShowForm(!showForm)}>${showForm ? t('close') : t('anniv.add')}</button></div>
+      <div class="row-between"><h2>${t('home.upcoming')}</h2><button class="link" onClick=${() => setShowForm(!showForm)}>${showForm ? t('close') : t('anniv.addBtn')}</button></div>
       ${showForm && html`<form class="form" onSubmit=${addAnniv}>
         <input value=${form.title} onInput=${(e) => setForm({ ...form, title: e.target.value })} placeholder=${t('anniv.ph')} maxlength="20" />
         <input type="date" value=${form.date} onInput=${(e) => setForm({ ...form, date: e.target.value })} />
