@@ -122,6 +122,26 @@ export async function compressImage(file, max = 1600, quality = 0.82) {
   return await new Promise((res) => c.toBlob(res, 'image/jpeg', quality));
 }
 
+// Center-crops to a square and shrinks — used for profile photos.
+export async function squareImage(file, size = 512, quality = 0.85) {
+  let img = await createImageBitmap(file).catch(() => null);
+  if (!img) {
+    img = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = URL.createObjectURL(file);
+    });
+  }
+  const side = Math.min(img.width, img.height);
+  const out = Math.min(size, side);
+  const c = document.createElement('canvas');
+  c.width = out;
+  c.height = out;
+  c.getContext('2d').drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, out, out);
+  return await new Promise((res) => c.toBlob(res, 'image/jpeg', quality));
+}
+
 const urlCache = new Map();
 export async function signedUrls(paths) {
   const need = paths.filter((p) => !urlCache.has(p));

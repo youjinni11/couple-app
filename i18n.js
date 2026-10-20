@@ -79,6 +79,8 @@ const D = {
     'anniv.addBtn': '기념일 추가', 'anniv.confirmDelete': '이 기념일을 지울까요?', 'anniv.deleteAria': '기념일 삭제',
 
     'set.title': '설정', 'set.name': '내 이름', 'set.nameSaved': '이름을 바꿨어요',
+    'set.profile': '내 프로필', 'set.photoAdd': '사진 넣기', 'set.photoChange': '사진 바꾸기', 'set.photoRemove': '사진 지우기',
+    'set.photoUploading': '올리는 중…', 'set.photoSaved': '프로필 사진을 바꿨어요', 'set.photoRemoved': '프로필 사진을 지웠어요',
     'set.language': '언어', 'set.languageHint': '화면, 추천 버킷리스트, 오늘의 질문, 나에게 오는 알림이 이 언어로 바뀌어요. 짝꿍은 자기 언어로 봐요.',
     'set.font': '글씨체', 'set.size': '글자 크기', 'set.sample': '우리 둘이 함께 채워요',
     'size.0': '작게', 'size.1': '보통', 'size.2': '크게', 'size.3': '더 크게', 'size.4': '가장 크게',
@@ -92,7 +94,7 @@ const D = {
     'set.us': '우리', 'set.startDate': '사귀기 시작한 날', 'set.dateSaved': '날짜를 저장했어요',
     'set.partner': '짝꿍: {name}', 'set.partnerPending': '아직 연결 전 (초대 코드 {code})',
 
-    'tab.home': '홈', 'tab.bucket': '버킷', 'tab.q': '문답', 'tab.notes': '쪽지', 'tab.cal': '달력',
+    'tab.home': '홈', 'tab.bucket': '버킷', 'tab.talk': '이야기', 'tab.cal': '달력', 'tab.me': '마이',
   },
 
   en: {
@@ -168,6 +170,8 @@ const D = {
     'anniv.addBtn': 'Add anniversary', 'anniv.confirmDelete': 'Delete this anniversary?', 'anniv.deleteAria': 'Delete anniversary',
 
     'set.title': 'Settings', 'set.name': 'Your name', 'set.nameSaved': 'Name updated',
+    'set.profile': 'Your profile', 'set.photoAdd': 'Add photo', 'set.photoChange': 'Change photo', 'set.photoRemove': 'Remove photo',
+    'set.photoUploading': 'Uploading…', 'set.photoSaved': 'Profile photo updated', 'set.photoRemoved': 'Profile photo removed',
     'set.language': 'Language', 'set.languageHint': 'Screens, bucket list ideas, daily questions and your notifications switch to this language. Your partner sees their own language.',
     'set.font': 'Font', 'set.size': 'Text size', 'set.sample': 'Filling it up, together',
     'size.0': 'Small', 'size.1': 'Default', 'size.2': 'Large', 'size.3': 'Larger', 'size.4': 'Largest',
@@ -181,7 +185,7 @@ const D = {
     'set.us': 'Us', 'set.startDate': 'The day you started dating', 'set.dateSaved': 'Date saved',
     'set.partner': 'Partner: {name}', 'set.partnerPending': 'Not connected yet (invite code {code})',
 
-    'tab.home': 'Home', 'tab.bucket': 'Bucket', 'tab.q': 'Q&A', 'tab.notes': 'Notes', 'tab.cal': 'Calendar',
+    'tab.home': 'Home', 'tab.bucket': 'Bucket', 'tab.talk': 'Talk', 'tab.cal': 'Calendar', 'tab.me': 'Me',
   },
 
   zh: {
@@ -257,6 +261,8 @@ const D = {
     'anniv.addBtn': '添加纪念日', 'anniv.confirmDelete': '要删除这个纪念日吗？', 'anniv.deleteAria': '删除纪念日',
 
     'set.title': '设置', 'set.name': '我的名字', 'set.nameSaved': '名字已修改',
+    'set.profile': '我的资料', 'set.photoAdd': '添加头像', 'set.photoChange': '更换头像', 'set.photoRemove': '删除头像',
+    'set.photoUploading': '上传中…', 'set.photoSaved': '头像已更换', 'set.photoRemoved': '头像已删除',
     'set.language': '语言', 'set.languageHint': '界面、推荐心愿、每日问题和发给你的通知都会换成这个语言。对方看到的是自己的语言。',
     'set.font': '字体', 'set.size': '字号', 'set.sample': '我们一起慢慢填满',
     'size.0': '小', 'size.1': '标准', 'size.2': '大', 'size.3': '较大', 'size.4': '最大',
@@ -270,7 +276,7 @@ const D = {
     'set.us': '我们', 'set.startDate': '在一起的日子', 'set.dateSaved': '日期已保存',
     'set.partner': '另一半：{name}', 'set.partnerPending': '尚未连接（邀请码 {code}）',
 
-    'tab.home': '首页', 'tab.bucket': '心愿', 'tab.q': '问答', 'tab.notes': '纸条', 'tab.cal': '日历',
+    'tab.home': '首页', 'tab.bucket': '心愿', 'tab.talk': '聊聊', 'tab.cal': '日历', 'tab.me': '我的',
   },
 };
 

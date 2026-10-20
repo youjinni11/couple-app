@@ -1,6 +1,6 @@
 import { html, render, useState, useEffect, useRef, useCallback } from 'https://unpkg.com/htm@3.1.1/preact/standalone.module.js';
 import {
-  sb, kstToday, fmtDate, timeAgo, dPlus, upcomingEvents, dailyQuestionFor, compressImage, signedUrls,
+  sb, kstToday, fmtDate, timeAgo, dPlus, upcomingEvents, dailyQuestionFor, compressImage, squareImage, signedUrls,
   isStandalone, currentPushState, enablePush, disablePush, applyFont, applySize, SIZES, daysBetween,
   loadContent, allPresets, presetTitle, bucketTitle, bucketQuestion,
 } from './lib.js';
@@ -43,9 +43,27 @@ function Header({ title, back, right }) {
 }
 
 const nameOf = (id, ctx) => (id === ctx.user.id ? ctx.profile.nickname : (ctx.partner?.nickname || t('partner')));
+const personOf = (id, ctx) => (id === ctx.user.id ? ctx.profile : ctx.partner);
+
+// Profile photo in a ring of the person's color; falls back to their initial.
+function Avatar({ person, mine, size = 'sm' }) {
+  const path = person?.avatar_path;
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    setUrl(null);
+    if (path) signedUrls([path]).then((u) => { if (alive) setUrl(u[0] || null); });
+    return () => { alive = false; };
+  }, [path]);
+  const cls = `av av-${size} ${mine ? 'me' : 'you'}`;
+  if (url) return html`<img class=${cls} src=${url} alt="" />`;
+  const initial = (person?.nickname || '').trim().slice(0, 1) || '·';
+  return html`<span class=${cls + ' av-ph'} aria-hidden="true">${initial}</span>`;
+}
+
 function Who({ id, ctx, label }) {
   const me = id === ctx.user.id;
-  return html`<span class=${'who ' + (me ? 'me' : 'you')}><i></i>${label !== false ? nameOf(id, ctx) : ''}</span>`;
+  return html`<span class=${'who ' + (me ? 'me' : 'you')}><${Avatar} person=${personOf(id, ctx)} mine=${me} />${label !== false ? nameOf(id, ctx) : ''}</span>`;
 }
 
 function Empty({ children, action }) {
@@ -179,7 +197,6 @@ function Home({ ctx }) {
   return html`<main class="page home">
     <header class="home-top">
       <span class="pair-names"><${Who} id=${ctx.user.id} ctx=${ctx} /> <span class="amp">&</span> ${partner ? html`<${Who} id=${partner.id} ctx=${ctx} />` : html`<span class="muted">${t('home.waiting')}</span>`}</span>
-      <button class="icon-btn" aria-label=${t('set.title')} onClick=${() => go('#/settings')}>⚙︎</button>
     </header>
 
     <section class="hero">
@@ -188,7 +205,7 @@ function Home({ ctx }) {
                <p class="hero-num">${dPlus(couple.started_on)}<span>${t('home.daysUnit')}</span></p>
                <p class="hero-sub">${t('home.since', { date: fmtDate(couple.started_on, true) })}</p>`
         : html`<p class="hero-label">${t('home.setDate')}</p>
-               <button class="btn small" onClick=${() => go('#/settings')}>${t('home.setDateBtn')}</button>`}
+               <button class="btn small" onClick=${() => go('#/me')}>${t('home.setDateBtn')}</button>`}
     </section>
 
     ${!partner && html`<section class="card invite">
@@ -197,7 +214,7 @@ function Home({ ctx }) {
       <button class="btn small" onClick=${() => navigator.clipboard?.writeText(couple.invite_code).then(() => toast(t('home.copied')))}>${t('home.copyCode')}</button>
     </section>`}
 
-    ${push !== 'on' && html`<button class="card notice" onClick=${() => go('#/settings')}>
+    ${push !== 'on' && html`<button class="card notice" onClick=${() => go('#/me')}>
       🔔 ${ios && !isStandalone() ? t('home.addHomeHint') : t('home.pushHint')}
     </button>`}
 
@@ -573,7 +590,7 @@ function QuestionHome({ ctx }) {
     return b ? bucketQuestion(b) : h.text;
   };
   return html`<main class="page">
-    <${Header} title=${t('q.homeTitle')} />
+    <${TalkSwitch} active="q" ctx=${ctx} />
     <button class="card qcard" onClick=${() => go(`#/q/${encodeURIComponent(key)}`)}>
       <span class="card-kicker">${t('q.todayKicker')}</span>
       <p class="qtext">${dailyQuestionFor(kstToday())}</p>
@@ -623,7 +640,7 @@ function Notes({ ctx, query }) {
     load();
   }
   return html`<main class="page notes">
-    <${Header} title=${t('notes.title')} />
+    <${TalkSwitch} active="notes" ctx=${ctx} />
     ${notes === null ? html`<p class="muted center">${t('loading')}</p>` : notes.length === 0
       ? html`<${Empty}>${t('notes.empty')}<//>`
       : html`<ul class="note-list">${notes.map((n) => html`<li id=${'note-' + n.id} class=${'note ' + (n.sender_id === ctx.user.id ? 'me' : 'you')}>
@@ -733,7 +750,36 @@ function Settings({ ctx }) {
   const [busy, setBusy] = useState(false);
   const [font, setFontState] = useState(document.documentElement.dataset.font || DEFAULT_FONT[lang]);
   const [size, setSizeState] = useState(Number(ctx.profile.font_size) || 1);
+  const [photoBusy, setPhotoBusy] = useState(false);
   useEffect(() => { currentPushState().then(setPush); }, []);
+  async function changePhoto(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setPhotoBusy(true);
+    try {
+      const blob = await squareImage(file, 512);
+      const path = `${ctx.couple.id}/avatars/${ctx.user.id}-${Date.now()}.jpg`;
+      const { error: upErr } = await sb.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg' });
+      if (upErr) throw upErr;
+      const old = ctx.profile.avatar_path;
+      const { error } = await sb.from('profiles').update({ avatar_path: path }).eq('id', ctx.user.id);
+      if (error) throw error;
+      if (old) await sb.storage.from('photos').remove([old]);
+      toast(t('set.photoSaved'));
+      await ctx.reload();
+    } catch (e2) { toast(errMsg(e2)); }
+    setPhotoBusy(false);
+  }
+  async function removePhoto() {
+    const old = ctx.profile.avatar_path;
+    if (!old) return;
+    setPhotoBusy(true);
+    const { error } = await sb.from('profiles').update({ avatar_path: null }).eq('id', ctx.user.id);
+    if (error) toast(errMsg(error));
+    else { await sb.storage.from('photos').remove([old]); toast(t('set.photoRemoved')); await ctx.reload(); }
+    setPhotoBusy(false);
+  }
   async function saveNick() {
     const { error } = await sb.from('profiles').update({ nickname: nick.trim() || ctx.profile.nickname }).eq('id', ctx.user.id);
     if (error) return toast(errMsg(error));
@@ -769,7 +815,22 @@ function Settings({ ctx }) {
   const ios = /iPhone|iPad/.test(navigator.userAgent);
   const sizeIdx = SIZES.indexOf(size);
   return html`<main class="page">
-    <${Header} title=${t('set.title')} back="#/" />
+    <${Header} title=${t('tab.me')} />
+
+    <section class="card form">
+      <h2>${t('set.profile')}</h2>
+      <div class="profile-row">
+        <${Avatar} person=${ctx.profile} mine=${true} size="lg" />
+        <div class="profile-actions">
+          <label class=${'btn small' + (photoBusy ? ' disabled' : '')}>
+            <input type="file" accept="image/*" class="visually-hidden" disabled=${photoBusy} onChange=${changePhoto} />
+            ${photoBusy ? t('set.photoUploading') : ctx.profile.avatar_path ? t('set.photoChange') : t('set.photoAdd')}
+          </label>
+          ${ctx.profile.avatar_path && html`<button class="link small" disabled=${photoBusy} onClick=${removePhoto}>${t('set.photoRemove')}</button>`}
+        </div>
+      </div>
+      <label>${t('set.name')}<div class="inline"><input value=${nick} onInput=${(e) => setNick(e.target.value)} maxlength="12" /><button class="btn" onClick=${saveNick}>${t('save')}</button></div></label>
+    </section>
 
     <section class="card form">
       <h2>${t('set.language')}</h2>
@@ -799,11 +860,6 @@ function Settings({ ctx }) {
     </section>
 
     <section class="card form">
-      <h2>${t('set.name')}</h2>
-      <div class="inline"><input value=${nick} onInput=${(e) => setNick(e.target.value)} maxlength="12" aria-label=${t('set.name')} /><button class="btn" onClick=${saveNick}>${t('save')}</button></div>
-    </section>
-
-    <section class="card form">
       <h2>${t('set.notif')}</h2>
       ${push === 'unsupported' || (ios && !isStandalone())
         ? html`<ol class="steps"><li>${t('set.ios1')}</li><li>${t('set.ios2')}</li><li>${t('set.ios3')}</li></ol>`
@@ -825,13 +881,32 @@ function Settings({ ctx }) {
 }
 
 // ---------------------------------------------------------------- shell
+// Line icons drawn at 24px; stroke takes the tab's current color.
+const svg = (body) => html`<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+const ICONS = {
+  home: () => svg(html`<path d="M3.5 10.5 12 3.5l8.5 7V19a1.5 1.5 0 0 1-1.5 1.5h-4v-6h-6v6H5A1.5 1.5 0 0 1 3.5 19z" />`),
+  bucket: () => svg(html`<rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><path d="m8.5 12.2 2.4 2.4 4.6-5" />`),
+  talk: () => svg(html`<path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v9a1.5 1.5 0 0 1-1.5 1.5h-6.5L8 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z" /><path d="M8 9.5h8M8 12.5h5" />`),
+  cal: () => svg(html`<rect x="3.5" y="5" width="17" height="15.5" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" />`),
+};
+
+const lastTalk = () => { try { return localStorage.getItem('talkTab') === 'notes' ? '#/notes' : '#/q'; } catch (e) { return '#/q'; } };
 const TABS = [
-  { h: '#/', k: 'tab.home', icon: '⌂', match: (p) => p === '/' || p.startsWith('/memories') || p.startsWith('/diary') || p.startsWith('/settings') },
-  { h: '#/bucket', k: 'tab.bucket', icon: '☑︎', match: (p) => p.startsWith('/bucket') },
-  { h: '#/q', k: 'tab.q', icon: '❝', match: (p) => p.startsWith('/q') },
-  { h: '#/notes', k: 'tab.notes', icon: '✉︎', match: (p) => p.startsWith('/notes') },
-  { h: '#/calendar', k: 'tab.cal', icon: '▦', match: (p) => p.startsWith('/calendar') },
+  { k: 'tab.home', icon: 'home', h: () => '#/', match: (p) => p === '/' || p.startsWith('/memories') || p.startsWith('/diary') },
+  { k: 'tab.bucket', icon: 'bucket', h: () => '#/bucket', match: (p) => p.startsWith('/bucket') },
+  { k: 'tab.talk', icon: 'talk', h: lastTalk, match: (p) => p.startsWith('/q') || p.startsWith('/notes'), badge: true },
+  { k: 'tab.cal', icon: 'cal', h: () => '#/calendar', match: (p) => p.startsWith('/calendar') },
+  { k: 'tab.me', icon: 'me', h: () => '#/me', match: (p) => p.startsWith('/me') || p.startsWith('/settings') },
 ];
+
+// Top switch shared by the Q&A and Notes screens (they live under one tab).
+function TalkSwitch({ active, ctx }) {
+  useEffect(() => { try { localStorage.setItem('talkTab', active); } catch (e) {} }, [active]);
+  return html`<nav class="talk-switch seg" aria-label=${t('tab.talk')}>
+    <a href="#/q" aria-current=${active === 'q' ? 'page' : null} class=${active === 'q' ? 'on' : ''}>${t('q.homeTitle')}</a>
+    <a href="#/notes" aria-current=${active === 'notes' ? 'page' : null} class=${active === 'notes' ? 'on' : ''}>${t('notes.title')}${ctx.unread > 0 && active !== 'notes' ? html`<span class="badge inline">${ctx.unread}</span>` : ''}</a>
+  </nav>`;
+}
 
 function Main({ ctx }) {
   const { path, query } = useRoute();
@@ -848,13 +923,17 @@ function Main({ ctx }) {
   else if ((m = path.match(/^\/q\/(.+)$/))) page = html`<${Question} ctx=${ctx} qkey=${decodeURIComponent(m[1])} key=${m[1]} />`;
   else if (path === '/notes') page = html`<${Notes} ctx=${ctx} query=${query} key=${query.focus || 'n'} />`;
   else if (path === '/calendar') page = html`<${Calendar} ctx=${ctx} />`;
-  else if (path === '/settings') page = html`<${Settings} ctx=${ctx} />`;
+  else if (path === '/me' || path === '/settings') page = html`<${Settings} ctx=${ctx} />`;
   else page = html`<main class="page"><${Header} title="" back="#/" /><${Empty} action=${html`<button class="btn" onClick=${() => go('#/')}>${t('goHome')}</button>`}>${t('notFound')}<//></main>`;
   return html`${page}
-    <nav class="tabbar">${TABS.map((tb) => html`<a href=${tb.h} class=${tb.match(path) ? 'on' : ''} aria-current=${tb.match(path) ? 'page' : null}>
-      <span class="ti" aria-hidden="true">${tb.icon}</span><span>${t(tb.k)}</span>
-      ${tb.h === '#/notes' && ctx.unread > 0 && html`<span class="badge">${ctx.unread}</span>`}
-    </a>`)}</nav>`;
+    <nav class="tabbar" aria-label="Menu">${TABS.map((tb) => {
+      const on = tb.match(path);
+      return html`<a href=${tb.h()} class=${on ? 'on' : ''} aria-current=${on ? 'page' : null}>
+        <span class="ti">${tb.icon === 'me' ? html`<${Avatar} person=${ctx.profile} mine=${true} size="tab" />` : ICONS[tb.icon]()}</span>
+        <span class="tl">${t(tb.k)}</span>
+        ${tb.badge && ctx.unread > 0 && html`<span class="badge" aria-label=${String(ctx.unread)}>${ctx.unread}</span>`}
+      </a>`;
+    })}</nav>`;
 }
 
 function App() {
@@ -897,7 +976,7 @@ function App() {
     if (profile.couple_id) {
       const { data: c } = await sb.from('couples').select('*').eq('id', profile.couple_id).maybeSingle();
       couple = c;
-      const { data: p } = await sb.from('profiles').select('id,nickname').eq('couple_id', profile.couple_id).neq('id', uid).maybeSingle();
+      const { data: p } = await sb.from('profiles').select('id,nickname,avatar_path').eq('couple_id', profile.couple_id).neq('id', uid).maybeSingle();
       partner = p;
     }
     setState({ profile, couple, partner });
@@ -916,7 +995,8 @@ function App() {
     const ch = sb.channel('shell')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notes', filter: `couple_id=eq.${state.couple.id}` }, refreshUnread)
       .subscribe();
-    const onVis = () => { if (document.visibilityState === 'visible') { refreshUnread(); if (!state.partner) reload(); } };
+    // coming back to the app picks up a partner who just joined or changed their photo/name
+    const onVis = () => { if (document.visibilityState === 'visible') { refreshUnread(); reload(); } };
     document.addEventListener('visibilitychange', onVis);
     return () => { sb.removeChannel(ch); document.removeEventListener('visibilitychange', onVis); };
   }, [state?.couple?.id, !!state?.partner]);

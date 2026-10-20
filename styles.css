@@ -123,10 +123,23 @@ button.card:active { transform: scale(.99); }
 
 /* ---------- who colors: every record carries its writer's ink ---------- */
 .who { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
-.who i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
-.who.me i { background: var(--me); }
-.who.you i { background: var(--you); }
 .who.me { color: var(--ink); }
+
+/* avatars: photo in a ring of the writer's color, or their initial on that color */
+.av { flex: none; border-radius: 50%; object-fit: cover; display: inline-grid; place-items: center; background: var(--line); }
+.av.me { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--me); }
+.av.you { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--you); }
+.av-ph { color: #fff; font-weight: 700; line-height: 1; }
+.av-ph.me { background: var(--me); }
+.av-ph.you { background: var(--you); }
+.av-sm { width: 1.5em; height: 1.5em; font-size: .8em; margin: 0 2px; }
+.av-lg { width: 96px; height: 96px; font-size: 40px; }
+.home-top .av-sm { width: 2em; height: 2em; }
+.profile-row { display: flex; align-items: center; gap: 20px; padding: 6px 4px 4px; }
+.profile-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.profile-actions label.btn { display: inline-flex; align-items: center; cursor: pointer; color: var(--ink) !important; font-size: .88em; }
+.btn.disabled { opacity: .45; pointer-events: none; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- auth ---------- */
 .auth { max-width: 420px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 48px) 20px 48px; display: flex; flex-direction: column; gap: 16px; }
@@ -284,20 +297,40 @@ button.card:active { transform: scale(.99); }
 .steps { list-style: decimal; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
 
 /* ---------- tab bar ---------- */
+/* Solid bar, crisp sans labels (handwriting fonts are hard to read this small),
+   darker resting color, and a pink pill behind the current tab's icon. */
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
   display: grid; grid-template-columns: repeat(5, 1fr);
-  background: rgba(255,255,255,.94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  background: #fff;
   border-top: 1px solid var(--line);
-  padding-bottom: env(safe-area-inset-bottom);
-  /* the tab bar grows a little with the text size, but is capped so it never crowds the screen */
-  font-size: calc(16px * var(--scale) * min(var(--size), 1.15));
+  box-shadow: 0 -6px 20px rgba(42, 34, 54, .07);
+  padding: 4px 4px env(safe-area-inset-bottom);
+  font-family: var(--font-pretendard);
+  font-size: calc(12px * min(var(--size), 1.15));
 }
-.tabbar a { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 64px; text-decoration: none; color: var(--muted); font-size: .76em; gap: 2px; white-space: nowrap; }
-.tabbar .ti { font-size: 1.5em; line-height: 1; }
-.tabbar a.on { color: var(--ink); font-weight: 700; }
-.tabbar a.on .ti { color: var(--me); }
-.badge { position: absolute; top: 8px; left: calc(50% + 8px); background: var(--me); color: #fff; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; padding: 0 5px; font-family: var(--font-pretendard); }
+.tabbar a {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 60px; gap: 3px; text-decoration: none; white-space: nowrap;
+  color: #5E5672; font-weight: 600; letter-spacing: -0.01em;
+}
+.tabbar .ti {
+  display: grid; place-items: center; width: 56px; height: 32px; border-radius: 16px;
+  transition: background-color .15s;
+}
+.tabbar a.on { color: var(--ink); font-weight: 800; }
+.tabbar a.on .ti { background: var(--me-soft); color: var(--me); }
+.tabbar a.on .ti svg { stroke-width: 2.4; }
+.tabbar a:active .ti { background: var(--line); }
+.av-tab { width: 26px; height: 26px; font-size: 12px; box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #B9B1CB !important; }
+.tabbar a.on .av-tab { box-shadow: 0 0 0 2px var(--me-soft), 0 0 0 4px var(--me) !important; }
+.badge { position: absolute; top: 4px; left: calc(50% + 10px); background: var(--me); color: #fff; font-size: 11px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; padding: 0 5px; font-family: var(--font-pretendard); box-shadow: 0 0 0 2px #fff; }
+.badge.inline { position: static; display: inline-grid; margin-left: 6px; box-shadow: none; }
+
+/* Q&A / Notes switch at the top of the Talk tab */
+.talk-switch { margin-top: 8px; }
+.talk-switch a { flex: 1; text-align: center; padding: 10px 6px; border-radius: 999px; text-decoration: none; color: var(--muted); font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.talk-switch a.on { background: var(--card); color: var(--ink); }
 
 .toast {
   position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); transform: translateX(-50%);
